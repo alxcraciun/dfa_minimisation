@@ -26,17 +26,11 @@ for line in f:
     DFA[table[0]].update({table[1]: table[2]})
 f.close()
 
-print()
-for key in DFA.items():
-    print(*key)
-print()
-
 # Find reachable states
 reachable_states = set()
 reachable_states.add(start_state)
 
 new_elements = True
-
 while new_elements == True:
     new_elements = False
     aux = reachable_states.copy()
@@ -50,6 +44,64 @@ while new_elements == True:
 # Remove unreachable states
 for elem in all_states.difference(reachable_states):
     DFA.pop(elem, None)
+
+# Create transition tables
+table_finals = {state : {letter : DFA[state][letter] for letter in alphabet} for state in DFA.keys() if state in final_states}
+table_nonfinals = {state : {letter : DFA[state][letter] for letter in alphabet} for state in DFA.keys() if state not in final_states}
+
+# Merging states in table_finals
+merge_happened = True
+while merge_happened:
+    merge_happened = False
+    for state1 in table_finals.keys():
+        for state2 in table_finals.keys():
+            if table_finals[state1] == table_finals[state2] and state1 != state2:
+                # Replace all occurences of state2 with state1 in table_finals
+                table_finals.pop(state2)
+                for state in table_finals: 
+                    for letter in alphabet:
+                        if table_finals[state].get(letter) == state2:
+                            table_finals[state][letter] = state1
+                # Replace all occurences of state2 with state1 in table_nonfinals
+                for state in table_nonfinals: 
+                    for letter in alphabet:
+                        if table_nonfinals[state].get(letter) == state2:
+                            table_nonfinals[state][letter] = state1
+                merge_happened = True
+                break
+        if merge_happened:
+            break 
+
+# Merging states in table_nonfinals
+merge_happened = True
+while merge_happened:
+    merge_happened = False
+    for state1 in table_nonfinals.keys():
+        for state2 in table_nonfinals.keys():
+            if table_nonfinals[state1] == table_nonfinals[state2] and state1 != state2:
+                # Replace all occurences of state2 with state1 in table_finals
+                table_nonfinals.pop(state2)
+                for state in table_finals: 
+                    for letter in alphabet:
+                        if table_finals[state].get(letter) == state2:
+                            table_finals[state][letter] = state1
+                # Replace all occurences of state2 with state1 in table_nonfinals
+                for state in table_nonfinals: 
+                    for letter in alphabet:
+                        if table_nonfinals[state].get(letter) == state2:
+                            table_nonfinals[state][letter] = state1
+                merge_happened = True
+                break
+        if merge_happened:
+            break 
+
+table = table_finals | table_nonfinals
+
+print()
+for key in table.items():
+    print(*key)
+print()
+
 
 ''' input.txt presentation
 0 
@@ -85,4 +137,21 @@ for elem in all_states.difference(reachable_states):
 5 a 6
 6 a 4
 6 b 5
+'''
+
+''' input.txt https://www.javatpoint.com/minimization-of-dfa
+0 
+3 5
+0 0 1
+0 1 3
+1 1 3
+1 0 0
+2 1 4 
+2 0 1
+3 0 5
+3 1 5
+5 0 5
+5 1 5
+4 0 3
+4 1 3
 '''
