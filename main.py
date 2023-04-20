@@ -1,28 +1,42 @@
-import sys
-f = open('input.txt')
+def merge_states(state1, state2):
+    # Replace all occurences of state2 with state1 in table_finals
+    for state in table_finals:
+        for letter in alphabet:
+            if table_finals[state].get(letter) == state2:
+                table_finals[state][letter] = state1
+    # Replace all occurences of state2 with state1 in table_nonfinals
+    for state in table_nonfinals:
+        for letter in alphabet:
+            if table_nonfinals[state].get(letter) == state2:
+                table_nonfinals[state][letter] = state1
+
+
+def try_merging(table):
+    for state1 in table.keys():
+        for state2 in table.keys():
+            if table[state1] == table[state2] and state1 != state2:
+                table.pop(state2)
+                merge_states(state1, state2)
+                try_merging(table)
+                return
 
 DFA = {}
+f = open('input.txt')
 
 start_state = f.readline()
 start_state = start_state.strip()
-
 final_states = f.readline()
 final_states = [elem.strip() for elem in final_states.split()]
-
 alphabet = set()
 all_states = set()
 
 for line in f:
     table = [elem.strip() for elem in line.split()]
-
     all_states.add(table[0])
     all_states.add(table[2])
-
     alphabet.add(table[1])
-    
     if DFA.get(table[0]) == None:
         DFA[table[0]] = {}
-
     DFA[table[0]].update({table[1]: table[2]})
 f.close()
 
@@ -46,62 +60,25 @@ for elem in all_states.difference(reachable_states):
     DFA.pop(elem, None)
 
 # Create transition tables
-table_finals = {state : {letter : DFA[state][letter] for letter in alphabet} for state in DFA.keys() if state in final_states}
-table_nonfinals = {state : {letter : DFA[state][letter] for letter in alphabet} for state in DFA.keys() if state not in final_states}
+table_finals = {state: {letter: DFA[state][letter] for letter in alphabet}
+                for state in DFA.keys() if state in final_states}
+table_nonfinals = {state: {letter: DFA[state][letter] for letter in alphabet}
+                   for state in DFA.keys() if state not in final_states}
 
-# Merging states in table_finals
-merge_happened = True
-while merge_happened:
-    merge_happened = False
-    for state1 in table_finals.keys():
-        for state2 in table_finals.keys():
-            if table_finals[state1] == table_finals[state2] and state1 != state2:
-                # Replace all occurences of state2 with state1 in table_finals
-                table_finals.pop(state2)
-                for state in table_finals: 
-                    for letter in alphabet:
-                        if table_finals[state].get(letter) == state2:
-                            table_finals[state][letter] = state1
-                # Replace all occurences of state2 with state1 in table_nonfinals
-                for state in table_nonfinals: 
-                    for letter in alphabet:
-                        if table_nonfinals[state].get(letter) == state2:
-                            table_nonfinals[state][letter] = state1
-                merge_happened = True
-                break
-        if merge_happened:
-            break 
-
-# Merging states in table_nonfinals
-merge_happened = True
-while merge_happened:
-    merge_happened = False
-    for state1 in table_nonfinals.keys():
-        for state2 in table_nonfinals.keys():
-            if table_nonfinals[state1] == table_nonfinals[state2] and state1 != state2:
-                # Replace all occurences of state2 with state1 in table_finals
-                table_nonfinals.pop(state2)
-                for state in table_finals: 
-                    for letter in alphabet:
-                        if table_finals[state].get(letter) == state2:
-                            table_finals[state][letter] = state1
-                # Replace all occurences of state2 with state1 in table_nonfinals
-                for state in table_nonfinals: 
-                    for letter in alphabet:
-                        if table_nonfinals[state].get(letter) == state2:
-                            table_nonfinals[state][letter] = state1
-                merge_happened = True
-                break
-        if merge_happened:
-            break 
+try_merging(table_finals)
+try_merging(table_nonfinals)
 
 table = table_finals | table_nonfinals
 
 print()
+for key in DFA.items():
+    print(*key)
+
+print()
+
 for key in table.items():
     print(*key)
 print()
-
 
 ''' input.txt presentation
 0 
