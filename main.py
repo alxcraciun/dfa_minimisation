@@ -2,23 +2,33 @@ def merge_states(state1, state2):
     # Replace all occurences of state2 with state1 in table_finals
     for state in table_finals:
         for letter in alphabet:
-            if table_finals[state].get(letter) == state2:
-                table_finals[state][letter] = state1
+            if table_finals[state].get(letter) == state2 or table_finals[state].get(letter) == state1:
+                table_finals[state][letter] = state1 + ',' + state2
     # Replace all occurences of state2 with state1 in table_nonfinals
     for state in table_nonfinals:
         for letter in alphabet:
-            if table_nonfinals[state].get(letter) == state2:
-                table_nonfinals[state][letter] = state1
+            if table_nonfinals[state].get(letter) == state2 or table_nonfinals[state].get(letter) == state1:
+                table_nonfinals[state][letter] = state1 + ',' + state2
 
+    if table_finals.get(state1):
+        table_finals[state1 + ',' + state2] = table_finals.pop(state1)
 
+    if table_nonfinals.get(state1):
+        table_nonfinals[state1 + ',' + state2] = table_nonfinals.pop(state1)
+        
 def try_merging(table):
     for state1 in table.keys():
         for state2 in table.keys():
-            if table[state1] == table[state2] and state1 != state2:
-                table.pop(state2)
-                merge_states(state1, state2)
-                try_merging(table)
-                return
+            if state1 != state2:
+                should_merge = True
+                for letter in alphabet:
+                    if table[state1][letter] != table[state2][letter] and not (table[state1][letter] == state2 and table[state2][letter] == state1):
+                        should_merge = False
+                if should_merge:
+                    table.pop(state2)
+                    merge_states(state1, state2)
+                    try_merging(table)
+                    return
 
 DFA = {}
 f = open('input.txt')
@@ -69,12 +79,6 @@ try_merging(table_finals)
 try_merging(table_nonfinals)
 
 table = table_finals | table_nonfinals
-
-print()
-for key in DFA.items():
-    print(*key)
-
-print()
 
 for key in table.items():
     print(*key)
